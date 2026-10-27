@@ -1,0 +1,87 @@
+version: 1
+
+language: "en"
+
+specs:
+  directory: "specs"
+
+  history:
+    mode: "full"
+
+  functional:
+    file: "functional_specs.md"
+    template:
+      sections:
+        - id: "purpose"
+          title: "Purpose and Scope"
+          description: "Describe the system's purpose, users, and functional boundaries."
+          required: true
+
+        - id: "capabilities"
+          title: "Functional Capabilities"
+          description: "Describe the system's capabilities and expected behaviors."
+          required: true
+
+        - id: "business-rules"
+          title: "Business Rules"
+          description: "Document domain rules, constraints, and invariants."
+          required: true
+
+        - id: "interactions"
+          title: "User and System Interactions"
+          description: "Describe important workflows, inputs, outputs, and interactions."
+          required: false
+
+        - id: "validation"
+          title: "Validation and Error Handling"
+          description: "Document expected validation behavior and functional error cases."
+          required: true
+
+        - id: "acceptance-criteria"
+          title: "Acceptance Criteria"
+          description: "Document observable and testable conditions for expected behavior."
+          required: true
+
+  technical:
+    file: "technical_specs.md"
+    template:
+      sections:
+        - id: "architecture"
+          title: "Architecture and Components"
+          description: "Describe the system architecture, modules, and component responsibilities."
+          required: true
+
+        - id: "technology"
+          title: "Technology Stack and Dependencies"
+          description: "Document relevant technologies, libraries, runtime requirements, and dependencies."
+          required: true
+
+        - id: "interfaces"
+          title: "Interfaces and Contracts"
+          description: "Document module interfaces, APIs, data contracts, and integration boundaries."
+          required: true
+
+        - id: "data"
+          title: "Data and Persistence"
+          description: "Describe data structures, storage, schemas, and persistence behavior."
+          required: false
+
+        - id: "security"
+          title: "Security and Permissions"
+          description: "Document relevant security requirements, permissions, and trust boundaries."
+          required: false
+
+        - id: "operations"
+          title: "Performance and Operations"
+          description: "Document relevant performance, deployment, observability, and operational requirements."
+          required: false
+
+        - id: "testing"
+          title: "Testing Strategy"
+          description: "Describe automated tests, verification methods, and quality constraints."
+          required: true
+
+        - id: "decisions"
+          title: "Technical Decisions and Constraints"
+          description: "Document important technical decisions, rationale, and constraints."
+          required: true
