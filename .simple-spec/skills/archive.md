@@ -6,7 +6,7 @@ Consolidate a completed change into the permanent functional and technical speci
 
 ## Invocation conditions
 
-Use only when the user explicitly invokes **Archive** for a completed change. Do not archive automatically at the end of Implement.
+Use only when the user explicitly invokes **Archive** for a completed change. Do not archive automatically at the end of Implement. Verify if the proposed work in `proposal.md` and the plan of `tasks.md` have been completed before archiving a feature implementation.
 
 ## Required inputs
 
@@ -24,7 +24,7 @@ If any required input, approval, or file cannot be confirmed, explain the limita
 2. Resolve `specs.directory` relative to the project root. Reject absolute paths, `..` traversal, or paths (including symlink resolution) that escape the project root. If configuration is missing, invalid, or unsafe, stop and ask for correction; do not guess.
 3. Resolve the functional and technical permanent filenames from `specs.functional.file` and `specs.technical.file`, relative to the configured specification directory. Reject absolute paths, `..` traversal, or symlinks that resolve outside that directory. The changelog filename is always `changelog.md`; active workspaces are under `changes/WIP/`, and retained archived workspaces are under `changes/archived/`, relative to the configured directory. Never treat an archived workspace as active. For a legacy workspace directly under `changes/`, ask the user if its state is unclear; move a confirmed active workspace to WIP before archiving, preserving its folder name. Move a confirmed archived workspace to `archived/` only if it should be retained, and do not process it as active again. Never hardcode `specs/` or default permanent filenames.
 4. Read `specs.history.mode`. Allowed values are `full` and `changelog`. For missing or invalid values, do not delete anything; ask for clarification or preserve history conservatively.
-5. Use `language` for changelog entries and user-facing summaries. If it is missing or unusable, ask rather than guessing. Workflow instructions remain in English.
+5. Use `language` for changelog entries and user-facing summaries. If it is missing or unusable, ask rather than guessing.
 6. Treat each configured `template.sections` list as the structural reference. Preserve the configured order, custom titles and descriptions, and valid existing content. Keep required sections; optional sections may have no documented requirements when none are established. Section IDs are stable matching identifiers, not substitutes for content. Do not assume default headings or require default sections. Do not add executable configuration parsing.
 
 ## Files

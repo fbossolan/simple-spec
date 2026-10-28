@@ -6,7 +6,7 @@ Turn exploration findings into a reviewable functional and technical proposal an
 
 ## Invocation conditions
 
-Use only when the user explicitly invokes **Propose** or approves moving from Explore to Propose. Do not start Implement automatically.
+Use only when the user explicitly invokes **Propose** or approves moving from Explore to Propose. Do not start Implement automatically. If the exploration phase is completed, you can guide the user to start the proposal phase of the workflow.
 
 ## Required inputs
 
@@ -23,7 +23,7 @@ If required files cannot be accessed, explain the limitation rather than inventi
 2. Interpret `specs.directory` relative to the project root. Reject absolute paths, `..` traversal, or paths (including symlink resolution) that escape the project root. Stop if configuration is missing, invalid, or unsafe; do not guess a default.
 3. Resolve permanent documents using `specs.functional.file` and `specs.technical.file` relative to the configured specification directory. Reject absolute paths, `..` traversal, or symlinks that resolve outside that directory. The changelog is `changelog.md`; active workspaces are under `changes/WIP/`, and retained archived workspaces are under `changes/archived/`. Never treat archived workspaces as active. For a legacy workspace directly under `changes/`, ask the user if its state is unclear; move a confirmed active workspace to WIP or a confirmed archived workspace to `archived/` only if it should be retained, preserving its folder name. Never hardcode `specs/` or default permanent filenames.
 4. Treat each configured `template.sections` list as an ordered, customizable reference: honor its current section order, titles, descriptions, and required flags where relevant. IDs are stable configuration identifiers, not replacements for section content. Do not assume default section names or require every permanent-spec section in each proposal.
-5. Write `proposal.md`, `tasks.md`, questions, and user-facing summaries in the configured `language`. If it is missing or unusable, ask rather than guessing. Workflow instructions remain in English.
+5. Write `proposal.md`, `tasks.md`, questions, and user-facing summaries in the configured `language`. If it is missing or unusable, ask rather than guessing.
 6. Interpret the YAML directly as workflow input; do not add executable configuration parsing.
 
 ## Files

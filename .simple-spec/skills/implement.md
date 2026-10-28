@@ -6,7 +6,7 @@ Implement an approved change incrementally, verify each task's completion criter
 
 ## Invocation conditions
 
-Use only when the user explicitly invokes **Implement** and the current proposal and task plan have explicit user approval. Do not advance to Archive automatically.
+Use only when the user explicitly invokes **Implement** and the current proposal and task plan have explicit user approval. Do not advance to Archive automatically. Check the tasks that need to be implemented in `tasks.md`. If none left, please inform the user. 
 
 ## Required inputs
 
@@ -22,7 +22,7 @@ If required inputs or approval cannot be confirmed, explain what is missing and 
 1. Read `.simple-spec/config.yaml` at the project root before reading or writing any specification, changelog, or change-workspace file.
 2. Interpret `specs.directory` relative to the project root. Reject absolute paths, `..` traversal, or paths (including symlink resolution) that escape the project root. Stop if configuration is missing, invalid, or unsafe; do not guess a default.
 3. Resolve permanent documents from `specs.functional.file` and `specs.technical.file`, relative to the configured specification directory. Reject absolute paths, `..` traversal, or symlinks that resolve outside that directory. Resolve active workspaces under `changes/WIP/` and retained archived workspaces under `changes/archived/`. Never treat an archived workspace as active. For a legacy workspace directly under `changes/`, ask the user if its state is unclear; move a confirmed active workspace to WIP, or a confirmed archived workspace to `archived/` only if it should be retained, preserving its folder name. Never hardcode `specs/` or default permanent filenames.
-4. Use the configured `language` for generated change artifacts and user-facing summaries. If it is missing or unusable, ask rather than guessing. Workflow instructions remain in English.
+4. Use the configured `language` for generated change artifacts and user-facing summaries. If it is missing or unusable, ask rather than guessing.
 5. Interpret YAML as workflow input; do not add executable configuration parsing.
 
 ## Files

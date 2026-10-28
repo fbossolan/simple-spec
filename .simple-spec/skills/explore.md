@@ -6,7 +6,7 @@ Clarify what the user wants to build before proposing a solution. Act as an inqu
 
 ## Invocation conditions
 
-Run only when the user explicitly asks to explore an idea. State clearly that the user is in the Explore phase. Do not move to Propose automatically.
+Run only when the user explicitly asks to explore/brainstorm an idea or create specs/specifications files for SDD. State clearly that the user is in the Explore phase. Do not move to Propose automatically.
 
 ## Required inputs
 
