@@ -1,6 +1,6 @@
 Simple Spec is a lightweight, harness-agnostic workflow for developing software from explicit, reviewable specifications.
 
-The four phases are *Explore, **Propose, **Implement, and **Archive*. The user invokes each phase explicitly. For a requested phase, read and follow its instruction file:
+The four phases are **Explore**, **Propose**, **Implement**, and **Archive**. The user invokes each phase explicitly. For a requested phase, read and follow its instruction file:
 
 * .simple-spec/skills/explore.md
 * .simple-spec/skills/propose.md
