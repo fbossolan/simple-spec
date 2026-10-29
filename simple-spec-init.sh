@@ -2,8 +2,6 @@
 # simple-spec-init.sh: install Simple Spec into the current directory.
 # Compatible with bash 3.2 (macOS default). Never overwrites existing files.
 
-SCAFFOLD_DIR="${HOME}/.simple-spec-scaffolding"
-
 set -u
 
 MARKER_START='<!-- simple-spec:start -->'
@@ -13,7 +11,7 @@ SKILLS='explore propose implement archive'
 
 DRY_RUN=0
 ASSUME_YES=0
-INSTALL_SCAFFOLDING=0
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd -P)" || { printf 'Error: Cannot resolve the script directory.\n' >&2; exit 1; }
 
 CREATED=()
 APPENDED=()
@@ -21,18 +19,15 @@ SKIPPED=()
 
 usage() {
   cat <<EOF
-Usage: $(basename "$0") [--dry-run] [--yes] [--install-scaffolding] [--help]
+Usage: $(basename "$0") [--dry-run] [--yes] [--help]
 
 Install Simple Spec (.simple-spec/, AGENTS.md, and the specification folder)
-into the current directory from: $SCAFFOLD_DIR
+into the current directory using files beside this script.
 Existing files are never overwritten.
 
 Options:
   --dry-run              Show what would be created, appended, or skipped; write nothing.
   --yes                  Do not prompt; use the default specification folder ($DEFAULT_SPECS_DIR).
-  --install-scaffolding  Populate $SCAFFOLD_DIR from this repository's scaffolding/ and exit.
-                         If it exists, choose to add missing files only or override it
-                         (--yes adds missing files only).
   --help                 Show this help.
 EOF
 }
@@ -234,8 +229,8 @@ ends_without_newline() { # true if the file is non-empty and its last byte is no
 
 write_agents_block() {
   printf '%s\n' "$MARKER_START"
-  cat "$SCAFFOLD_DIR/AGENTS.md"
-  ends_without_newline "$SCAFFOLD_DIR/AGENTS.md" && printf '\n'
+  cat "$SCRIPT_DIR/AGENTS.md"
+  ends_without_newline "$SCRIPT_DIR/AGENTS.md" && printf '\n'
   printf '%s\n' "$MARKER_END"
 }
 
@@ -306,133 +301,6 @@ print_tree() {
   '
 }
 
-install_scaffolding() {
-  local repo src tmp f s
-  repo="$(cd "$(dirname "$0")" && pwd -P)" || die "Cannot resolve the script directory."
-  src="$repo/scaffolding"
-  for f in .simple-spec/config.yaml AGENTS.md; do
-    [ -f "$src/$f" ] || die "Missing '$src/$f'; run --install-scaffolding from a Simple Spec checkout."
-  done
-  for s in $SKILLS; do
-    [ -f "$src/.simple-spec/skills/$s.md" ] || die "Missing '$src/.simple-spec/skills/$s.md'."
-  done
-  [ -d "$src/specs" ] || die "Missing '$src/specs/'."
-  case "$SCAFFOLD_DIR" in
-    ''|/|"$HOME"|"$HOME/") die "Refusing to use SCAFFOLD_DIR='$SCAFFOLD_DIR'." ;;
-  esac
-
-  info "Scaffolding source: $src"
-  if [ -d "$repo/.simple-spec" ] && ! diff -rq "$repo/.simple-spec" "$src/.simple-spec" > /dev/null 2>&1; then
-    warn "scaffolding/.simple-spec/ differs from this repository's .simple-spec/; the scaffolding copy will be installed."
-  fi
-
-  if [ ! -e "$SCAFFOLD_DIR" ] && [ ! -L "$SCAFFOLD_DIR" ]; then
-    info "This will create the scaffolding at $SCAFFOLD_DIR."
-    if [ "$DRY_RUN" -eq 1 ]; then
-      info "Dry run: nothing was written."
-      return 0
-    fi
-    confirm "Install scaffolding into $SCAFFOLD_DIR?" || { info "Aborted; nothing was written."; return 0; }
-    replace_scaffolding "$src"
-    return
-  fi
-
-  [ -d "$SCAFFOLD_DIR" ] || die "'$SCAFFOLD_DIR' exists but is not a directory."
-  list_scaffolding_diff "$src"
-  if [ "$DRY_RUN" -eq 1 ]; then
-    info "Dry run: nothing was written."
-    return 0
-  fi
-  case "$(choose_scaffolding_mode)" in
-    missing) add_missing_scaffolding "$src" ;;
-    override) replace_scaffolding "$src" ;;
-    *) info "Aborted; nothing was written." ;;
-  esac
-}
-
-# list_scaffolding_diff <src>: print which scaffolding entries are missing or already present.
-list_scaffolding_diff() {
-  local src="$1" rel missing=0 present=0
-  info "Scaffolding already exists at $SCAFFOLD_DIR."
-  while IFS= read -r rel; do
-    if [ -e "$SCAFFOLD_DIR/$rel" ]; then
-      present=$((present + 1))
-    else
-      [ "$missing" -eq 0 ] && info "Missing:"
-      info "  - $rel"
-      missing=$((missing + 1))
-    fi
-  done <<EOF2
-$(scaffolding_entries "$src")
-EOF2
-  [ "$missing" -eq 0 ] && info "Missing: none"
-  info "Already present: $present"
-}
-
-# scaffolding_entries <src>: relative paths of all directories and files, parents first.
-scaffolding_entries() {
-  (cd "$1" && find . -mindepth 1 \( -type d -o -type f \) | sed 's|^\./||' | LC_ALL=C sort)
-}
-
-# choose_scaffolding_mode: print missing, override, or cancel.
-choose_scaffolding_mode() {
-  local answer
-  if [ "$ASSUME_YES" -eq 1 ]; then
-    printf 'missing'
-    return
-  fi
-  if ! is_tty; then
-    info "No terminal; cancelling (use --yes to add missing files only)." >&2
-    printf 'cancel'
-    return
-  fi
-  while :; do
-    read -r -p "[a]dd missing files only, [o]verride the installation, or [c]ancel? [a/o/C] " answer || { printf 'cancel'; return; }
-    case "$answer" in
-      a|A) printf 'missing'; return ;;
-      o|O) printf 'override'; return ;;
-      ''|c|C) printf 'cancel'; return ;;
-      *) info "Please answer a, o, or c." >&2 ;;
-    esac
-  done
-}
-
-add_missing_scaffolding() {
-  local src="$1" rel added=0
-  while IFS= read -r rel; do
-    [ -e "$SCAFFOLD_DIR/$rel" ] && continue
-    if [ -d "$src/$rel" ]; then
-      mkdir "$SCAFFOLD_DIR/$rel" || die "Cannot create '$SCAFFOLD_DIR/$rel'."
-    else
-      cp "$src/$rel" "$SCAFFOLD_DIR/$rel" || die "Cannot copy '$rel' into '$SCAFFOLD_DIR'."
-    fi
-    info "  added   $rel"
-    added=$((added + 1))
-  done <<EOF2
-$(scaffolding_entries "$src")
-EOF2
-  if [ "$added" -eq 0 ]; then
-    info "Nothing to add; the scaffolding at $SCAFFOLD_DIR is complete."
-  else
-    info "Added $added missing item(s) to $SCAFFOLD_DIR; existing files were kept."
-  fi
-}
-
-replace_scaffolding() {
-  local src="$1" tmp="$SCAFFOLD_DIR.tmp.$$"
-  rm -rf "$tmp"
-  mkdir -p "$tmp" \
-    && cp -R "$src/.simple-spec" "$tmp/.simple-spec" \
-    && cp "$src/AGENTS.md" "$tmp/AGENTS.md" \
-    && cp -R "$src/specs" "$tmp/specs" \
-    || { rm -rf "$tmp"; die "Cannot build the scaffolding in '$tmp'."; }
-  if [ -e "$SCAFFOLD_DIR" ]; then
-    rm -rf "$SCAFFOLD_DIR" || { rm -rf "$tmp"; die "Cannot remove the old scaffolding at '$SCAFFOLD_DIR'."; }
-  fi
-  mv "$tmp" "$SCAFFOLD_DIR" || die "Cannot move '$tmp' to '$SCAFFOLD_DIR'."
-  info "Scaffolding installed at $SCAFFOLD_DIR."
-}
-
 prompt_specs_dir() {
   local answer
   if [ "$ASSUME_YES" -eq 1 ] || ! is_tty; then
@@ -456,26 +324,31 @@ main() {
     case "$arg" in
       --dry-run) DRY_RUN=1 ;;
       --yes) ASSUME_YES=1 ;;
-      --install-scaffolding) INSTALL_SCAFFOLDING=1 ;;
       -h|--help) usage; exit 0 ;;
       *) usage >&2; exit 2 ;;
     esac
   done
 
-  if [ "$INSTALL_SCAFFOLDING" -eq 1 ]; then
-    install_scaffolding
-    exit $?
-  fi
-
-  [ -d "$SCAFFOLD_DIR" ] || die "Scaffolding not found at $SCAFFOLD_DIR. Run '$(basename "$0") --install-scaffolding' from a Simple Spec checkout."
+  [ -f "$SCRIPT_DIR/.simple-spec/config.yaml" ] || die "Missing '$SCRIPT_DIR/.simple-spec/config.yaml'. Run this script from a complete Simple Spec checkout."
   for s in config.yaml $(for k in $SKILLS; do printf 'skills/%s.md ' "$k"; done); do
-    [ -f "$SCAFFOLD_DIR/.simple-spec/$s" ] || die "Scaffolding is incomplete: missing $SCAFFOLD_DIR/.simple-spec/$s. Re-run --install-scaffolding."
+    [ -f "$SCRIPT_DIR/.simple-spec/$s" ] || die "Missing '$SCRIPT_DIR/.simple-spec/$s'."
   done
-  [ -f "$SCAFFOLD_DIR/AGENTS.md" ] || die "Scaffolding is incomplete: missing $SCAFFOLD_DIR/AGENTS.md. Re-run --install-scaffolding."
+  [ -f "$SCRIPT_DIR/AGENTS.md" ] || die "Missing '$SCRIPT_DIR/AGENTS.md'."
+
+  if is_tty; then clear; fi
+  cat <<'BANNER'
+         _                 __
+   _____(_)___ ___  ____  / /__        _________  ___  _____
+  / ___/ / __ `__ \/ __ \/ / _ \______/ ___/ __ \/ _ \/ ___/
+ (__  ) / / / / / / /_/ / /  __/_____(__  ) /_/ /  __/ /__
+/____/_/_/ /_/ /_/ .___/_/\___/     /____/ .___/\___/\___/
+                /_/                     /_/
+BANNER
+  sleep 2
 
   TARGET="$(pwd -P)" || die "Cannot resolve the current directory."
   info "Simple Spec files will be created in: $TARGET"
-  if [ "$TARGET" = "$(cd "$(dirname "$0")" && pwd -P)" ]; then
+  if [ "$TARGET" = "$SCRIPT_DIR" ]; then
     warn "this is the Simple Spec repository itself; its AGENTS.md would receive an appended block."
   fi
 
@@ -488,7 +361,7 @@ main() {
     normalize_specs_dir "$existing_specs" || die "Existing specs.directory '$existing_specs' is not a safe relative path; fix .simple-spec/config.yaml and re-run."
     info "Using the specification folder from the existing config: $SPECS_DIR"
   else
-    config_src="$SCAFFOLD_DIR/.simple-spec/config.yaml"
+    config_src="$SCRIPT_DIR/.simple-spec/config.yaml"
     prompt_specs_dir
     info "Specification folder: $SPECS_DIR"
   fi
@@ -510,9 +383,9 @@ main() {
   fi
 
   info ""
-  install_file ".simple-spec/config.yaml" config "$SCAFFOLD_DIR/.simple-spec/config.yaml"
+  install_file ".simple-spec/config.yaml" config "$SCRIPT_DIR/.simple-spec/config.yaml"
   for s in $SKILLS; do
-    install_file ".simple-spec/skills/$s.md" copy "$SCAFFOLD_DIR/.simple-spec/skills/$s.md"
+    install_file ".simple-spec/skills/$s.md" copy "$SCRIPT_DIR/.simple-spec/skills/$s.md"
   done
   install_agents
   ensure_dir "$SPECS_DIR"
