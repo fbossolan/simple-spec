@@ -17,7 +17,7 @@ If required files or configuration are unavailable, explain the limitation rathe
 ## Configuration requirements
 1. Read `.simple-spec/config.yaml` before accessing specification or change-workspace files.
 2. Resolve `specs.directory` relative to the project root. Stop if it is missing, invalid, absolute, traverses with `..`, or resolves outside the project root.
-3. Resolve the functional and technical specifications from `specs.functional.file` and `specs.technical.file`, relative to the configured specification directory. Reject paths that escape that directory. Active changes live under `<specs.direcory>/changes/WIP/`; archived changes retained by the `full` specs.history mode live under `<specs.directory>/changes/archived/`. Never treat archived workspaces as active.
+3. Resolve the functional and technical specifications from `specs.functional.file` and `specs.technical.file`, relative to the configured specification directory. Reject paths that escape that directory. Active changes live under `<specs.directory>/changes/WIP/`; archived changes retained by the `full` specs.history mode live under `<specs.directory>/changes/archived/`. Never treat archived workspaces as active.
 4. Use the configured `language` for notes, questions, and user-facing summaries. If the language is missing or unclear, ask.
 5. Treat YAML as workflow input; do not add executable configuration parsing.
 6. Ask the user if there is a specific part of the codebase you need to focus more to explore this new feature or if you need to understand the entire codebase.
