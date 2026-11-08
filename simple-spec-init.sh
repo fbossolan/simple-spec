@@ -7,7 +7,7 @@ set -u
 MARKER_START='<!-- simple-spec:start -->'
 MARKER_END='<!-- simple-spec:end -->'
 DEFAULT_SPECS_DIR='specs'
-SKILLS='explore propose implement archive'
+SKILLS='EXPLORE PROPOSE IMPLEMENT ARCHIVE'
 
 DRY_RUN=0
 ASSUME_YES=0
@@ -66,35 +66,25 @@ confirm() { # confirm <question>; default is no
 # config_value <file> <subsection|""> <key>: read a scalar under the top-level `specs:` block.
 config_value() {
   awk -v want_sub="$2" -v key="$3" '
-    function val(line) {
-      sub(/^[^:]*:[ \t]*/, "", line)
-      sub(/[ \t]+#.*$/, "", line)
-      sub(/[ \t]+$/, "", line)
-      gsub(/^["\047]|["\047]$/, "", line)
-      return line
+    function extract() {
+      gsub(/^[^:]*:[ \t]*/,""); gsub(/[ \t]*#.*$/,""); gsub(/[ \t]+$/,"")
+      gsub(/^"/,""); gsub(/"$/,""); gsub(/^'"'"'/,""); gsub(/'"'"'$/,"")
+      print; exit
     }
-    /^[^ \t#]/ { in_specs = ($0 ~ /^specs:[ \t]*$/); sub_sec = ""; next }
-    !in_specs { next }
-    /^  [^ \t#]/ {
-      if ($0 ~ /^  [A-Za-z_]+:[ \t]*$/) { s = $0; sub(/^  /, "", s); sub(/:.*/, "", s); sub_sec = s }
-      else sub_sec = ""
-      if (want_sub == "" && $0 ~ ("^  " key ":")) { print val($0); exit }
-      next
+    /^specs:/{f=1}
+    f && /^  [^ \t#]/{
+      if ($0 ~ /^  [A-Za-z_]+:[ \t]*$/) { s=$0; gsub(/^  |:.*$/,"",s); sec=s } else sec=""
+      if (want_sub=="" && $0 ~ ("^  "key":")) extract()
     }
-    /^    [^ \t#]/ {
-      if (want_sub != "" && sub_sec == want_sub && $0 ~ ("^    " key ":")) { print val($0); exit }
+    f && /^    [^ \t#]/{
+      if (want_sub!="" && sec==want_sub && $0 ~ ("^    "key":")) extract()
     }
   ' "$1"
 }
 
 # write_config <src> <dst> <specs dir>: copy config, setting specs.directory.
 write_config() {
-  awk -v dir="$3" '
-    /^[^ \t#]/ { in_specs = ($0 ~ /^specs:[ \t]*$/) }
-    in_specs && !done && /^  directory:/ { print "  directory: \"" dir "\""; done = 1; next }
-    { print }
-    END { if (!done) exit 3 }
-  ' "$1" > "$2"
+  sed "s|^  directory:.*|  directory: \"$3\"|" "$1" > "$2" || return 3
 }
 
 # normalize_specs_dir <input>: validate and set SPECS_DIR (trailing slashes removed).
@@ -261,44 +251,11 @@ install_agents() {
   report appended "$dst"
 }
 
-# print_tree: render created/appended paths as a tree rooted at TARGET.
-print_tree() {
-  {
-    local p
-    for p in ${CREATED[@]+"${CREATED[@]}"}; do printf 'C|%s\n' "$p"; done
-    for p in ${APPENDED[@]+"${APPENDED[@]}"}; do printf 'A|%s\n' "$p"; done
-  } | LC_ALL=C sort -t '|' -k 2 | awk -F '|' -v root="$TARGET" '
-    function add(p, dir,   par) {
-      if (p in seen) { if (dir) isdir[p] = 1; return }
-      par = p
-      if (index(p, "/")) sub(/\/[^\/]*$/, "", par); else par = "."
-      if (par != ".") add(par, 1)
-      seen[p] = 1
-      if (dir) isdir[p] = 1
-      kids[par] = kids[par] SUBSEP p
-    }
-    function show(par, prefix,   n, arr, i, c, name, tag) {
-      n = split(kids[par], arr, SUBSEP)
-      for (i = 2; i <= n; i++) {
-        c = arr[i]
-        name = c
-        sub(/.*\//, "", name)
-        if (isdir[c]) name = name "/"
-        tag = ""
-        if (state[c] == "A") tag = "  (appended)"
-        else if (!(c in state)) tag = "  (existing)"
-        print prefix (i == n ? "└── " : "├── ") name tag
-        if (isdir[c]) show(c, prefix (i == n ? "    " : "│   "))
-      }
-    }
-    {
-      p = $2; dir = 0
-      if (p ~ /\/$/) { p = substr(p, 1, length(p) - 1); dir = 1 }
-      state[p] = $1
-      add(p, dir)
-    }
-    END { print root "/"; show(".", "") }
-  '
+# print_results: list created and appended paths.
+print_results() {
+  local p
+  for p in ${CREATED[@]+"${CREATED[@]}"}; do info "  created   $p"; done
+  for p in ${APPENDED[@]+"${APPENDED[@]}"}; do info "  appended  $p"; done
 }
 
 prompt_specs_dir() {
@@ -391,7 +348,7 @@ BANNER
   ensure_dir "$SPECS_DIR"
   install_file "$SPECS_DIR/$functional" empty
   install_file "$SPECS_DIR/$technical" empty
-  install_file "$SPECS_DIR/changelog.md" empty
+  install_file "$SPECS_DIR/CHANGELOG.md" empty
   install_file "$SPECS_DIR/changes/WIP/.gitkeep" empty
   install_file "$SPECS_DIR/changes/archived/.gitkeep" empty
 
@@ -404,7 +361,7 @@ BANNER
   if [ "${#CREATED[@]}" -eq 0 ] && [ "${#APPENDED[@]}" -eq 0 ]; then
     info "  nothing; Simple Spec is already installed here."
   else
-    print_tree
+    print_results
   fi
   if [ "${#SKIPPED[@]}" -gt 0 ]; then
     info ""
